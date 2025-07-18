@@ -1,0 +1,3 @@
+build/
+go.sum
+src/ebpf-go/bpf_*

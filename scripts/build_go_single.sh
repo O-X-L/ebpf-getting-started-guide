@@ -4,7 +4,7 @@ set -eo pipefail
 
 if [ -z "$1" ]
 then
-  SRC_DIR='src/'
+  SRC_DIR='src/ebpf-go/'
 else
   SRC_DIR="$1"
 fi

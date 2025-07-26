@@ -90,7 +90,6 @@ To run: `make build_go` or `bash scripts/build_go_single.sh <relative-src-path>`
 
 Look into the script and `docker/Dockerfile_build_go` to get to know how it is done.
 
-
 ----
 
 ## Debug Output (Print)
@@ -129,3 +128,37 @@ NOTE: `bpf_trace_printk` can only take 3 format-parameters.
   // bpf_trace_printk: [eBPF] IP6: Parts 1+2 (0xfe800000 0x0)
   // bpf_trace_printk: [eBPF] IP6: Parts 3+4 (0xc87facff 0xfe69287a)
   ```
+
+----
+
+## IPv6
+
+We've found that you can run into issues with IPv6 addresses as they have 128-bit vs the 32-bit of IPv4.
+
+If you want to pass it to your user-space process you might need/want to split it into 32-bit chunks:
+
+```c
+struct ip6_addr {
+    __u32 addr[4];
+};
+
+static __always_inline void process_ip6(struct ethhdr *ethhdr) {
+    struct ipv6hdr *ip6h = (void *)(ethhdr + 1);
+
+    // create and populate
+    struct ip6_addr ip6_src;
+    __builtin_memcpy(&ip6_src.addr, &ip6h->saddr, sizeof(ip6_src.addr));
+
+    // convert network to host
+    ip6_src.addr[0] = bpf_ntohl(ip6_src.addr[0]);
+    ip6_src.addr[1] = bpf_ntohl(ip6_src.addr[1]);
+    ip6_src.addr[2] = bpf_ntohl(ip6_src.addr[2]);
+    ip6_src.addr[3] = bpf_ntohl(ip6_src.addr[3]);
+
+    // debug log
+    const char log_ip6_p1[] = "[eBPF] IP6: Parts 1+2 (0x%x 0x%x)\n";
+    bpf_trace_printk(log_ip6_p1, sizeof(log_ip6_p1), ip6o.addr[0], ip6o.addr[1]);
+    const char log_ip6_p2[] = "[eBPF] IP6: Parts 3+4 (0x%x 0x%x)\n";
+    bpf_trace_printk(log_ip6_p2, sizeof(log_ip6_p2), ip6o.addr[2], ip6o.addr[3]);
+}
+```

@@ -118,7 +118,7 @@ NOTE: `bpf_trace_printk` can only take 3 format-parameters.
   // bpf_trace_printk: [eBPF] IP6: fe80:0000:0000:0000:c87f:acff:fe69:287a
   ```
 
-* Write hex of bytes
+* Write hex of int
 
   ```c
   const char log_ip6_p1[] = "[eBPF] IP6: Parts 1+2 (0x%x 0x%x)\n";
